@@ -1,5 +1,6 @@
 package com.manulife.studentlibrary.Entity;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.*;
@@ -16,6 +17,8 @@ public class Student {
 	private String photoPath;
 	private int phoneNumber;
 	private String email;
+
+	private String password;
 	public String getName() {
 		return name;
 	}
@@ -51,6 +54,11 @@ public class Student {
         joinColumns = @JoinColumn(name = "student_id", referencedColumnName = "id"),
         inverseJoinColumns = @JoinColumn(name = "book_id", referencedColumnName = "id"))
     private Set<Book> books;
+	@ManyToMany(fetch = FetchType.LAZY)
+	  @JoinTable(name = "student_roles", 
+	             joinColumns = @JoinColumn(name = "student_id"),
+	             inverseJoinColumns = @JoinColumn(name = "role_id"))
+	  private Set<Role> roles = new HashSet<>();
 	public Long getId() {
 		return id;
 	}
@@ -62,5 +70,17 @@ public class Student {
 	}
 	public void setBooks(Set<Book> books) {
 		this.books = books;
+	}
+	public Set<Role> getRoles() {
+	    return roles;
+	  }
+	  public void setRoles(Set<Role> roles) {
+	    this.roles = roles;
+	  }
+	public String getPassword() {
+		return password;
+	}
+	public void setPassword(String password) {
+		this.password = password;
 	}
 }

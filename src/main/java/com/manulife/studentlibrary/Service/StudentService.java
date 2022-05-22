@@ -1,6 +1,8 @@
 package com.manulife.studentlibrary.Service;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.manulife.studentlibrary.Entity.Book;
 import com.manulife.studentlibrary.Entity.Student;
@@ -22,14 +25,12 @@ public class StudentService implements UserDetailsService{
 
 @Autowired
 private StudentRepository studentRepository;
-	@Override
-	public UserDetails loadUserByUsername(String studentId) throws UsernameNotFoundException {
-		Student student = studentRepository.findById(Long.parseLong(studentId)).orElseThrow(() -> 
-		new UsernameNotFoundException("Student not found with id"+studentId));
-		return new User(student.getName(),student.getId().toString(), mapBookstoStudents(student.getBooks()));
-	}
-	private Collection< ? extends GrantedAuthority> mapBookstoStudents(Set<Book> books){
-        return books.stream().map(book -> new SimpleGrantedAuthority(book.getTitle())).collect(Collectors.toList());
-    }
+@Transactional
+public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+  Student student = studentRepository.findByNameOrEmail(username,username)
+      .orElseThrow(() -> new UsernameNotFoundException("Student Not Found with name or email: " + username));
+  return StudentDetailsImpl.build(student);
+}
+	
 
 }

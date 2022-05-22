@@ -10,9 +10,14 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.manulife.studentlibrary.Security.Jwt.JWTEntryPoint;
+import com.manulife.studentlibrary.Security.Jwt.JWTFilter;
 import com.manulife.studentlibrary.Service.StudentService;
 
 @EnableWebSecurity
@@ -22,33 +27,36 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter{
 	
 	@Autowired
 	private StudentService studentService;
-	@Override
-	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-		auth.userDetailsService(studentService).passwordEncoder(passwordEncoder());
-	}
 	
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
+	@Autowired
+	  private JWTEntryPoint unauthorizedHandler;
+	  @Bean
+	  public JWTFilter authenticationJwtTokenFilter() {
+	    return new JWTFilter();
+	  }
+	 @Override
+	    protected void configure(HttpSecurity http) throws Exception {
+			/*
+			 * http .csrf().disable() .authorizeRequests() .antMatchers(HttpMethod.GET,
+			 * "/api/**").permitAll() .antMatchers("/**").permitAll();
+			 */
+		 http.cors().and().csrf().disable()
+	      .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
+	      .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+	      .authorizeRequests().antMatchers("/api/auth/**").permitAll()
+	      .antMatchers("/**").permitAll()
+	      .anyRequest().authenticated();
+	    http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+	        
+	    }
 
-			http.
-				csrf().disable()
-				.authorizeRequests().antMatchers(HttpMethod.GET, "/api/**").permitAll()
-				.antMatchers(HttpMethod.GET, "/**").permitAll();
-				//.anyRequest();
-				//.authenticated()
-				//.and();
-				//.httpBasic();
-	}
-	
-	
-	@Bean
-	@Override
-	public AuthenticationManager authenticationManagerBean() throws Exception {
-		// TODO Auto-generated method stub
-		return super.authenticationManagerBean();
-	}
-	@Bean
-	PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
+	    @Bean
+	    PasswordEncoder passwordEncoder(){
+	    	return (NoOpPasswordEncoder) NoOpPasswordEncoder.getInstance();
+	    }
+	    @Override
+	    @Bean
+	    public AuthenticationManager authenticationManagerBean() throws Exception {
+	        return super.authenticationManagerBean();
+	    }
 }
